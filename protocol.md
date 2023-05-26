@@ -5,11 +5,13 @@
 | /get_room_info | 获取房间实时信息 |  |
 | /set_room_info | 房间设置 |  |
 | /get_commodity_info | 获取商品信息 |  |
-| /set_commodity_info | 商品设置 |  |
+| /set_commodity_info | 商品信息设置 |  |
 | /get_history_order_info | 获取历史订单信息 |  |
 | /del_history_order_info | 删除历史订单信息 |  |
 | /pause_order | 暂停/恢复订单 |  |
 | /open_end_order | 开始/结束订单 |  |
+| /get_order_info | 获取订单（已购买商品）信息 | 可能用不上这个接口 |
+| /set_order_info | 订单信息设置（变更已购买商品，新增和删除） |  |
 
 
 ### /get_room_info
@@ -37,9 +39,16 @@
 | total_time | string | 是 | 当前时长 |
 | pause_time | string | 是 | 暂停时长 |
 | cost | string | 是 | 总费用 |
-| order_info | string | 是 | 订单详情#todo，考虑什么格式展示？ |
+| order_info | list | 是 | 订单详情#todo，考虑什么格式展示？ |
 | pause_status | string | 是 | 暂停状态， 'running'：进行中,'pause':暂停中|
 | order_status | bool | 是 | 暂停状态， 'running'：进行中,'ending':可开单|
+
+**order_info单笔交易信息参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| order_id | string | 是 | 订单id |
+| order_content | string | 是 | 订单内容 eg："红牛x1"|
 
 **回报示例** 
 
@@ -57,7 +66,16 @@
         "total_time": "03:00:00",
         "pause_time": "00:00:00",
         "cost": "200.0",
-        "order_info": "",
+        "order_info": [
+            {
+                "order_id": "20200101001001",
+                "order_content": "红牛x1"
+            },
+            {
+                "order_id": "20200101001002",
+                "order_content": "可乐x1"
+            }
+        ],
         "pause_status": "running",
         "order_status": "running"
     },
@@ -70,7 +88,7 @@
         "total_time": "00:00:00",
         "pause_time": "00:00:00",
         "cost": "0.0",
-        "order_info": "",
+        "order_info": [],
         "pause_status": "running",
         "order_status": "running"
     }
@@ -439,3 +457,107 @@
     "data":{}
 }
 ```
+
+### /get_order_info
+**描述**：获取订单信息
+
+**方法: post**
+
+**请求参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| id | string | 是 | 房间id |
+
+**请求示例：**
+
+```
+{
+    "id":"001"
+}
+```
+
+**回报参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| code | string | 是 | 200表示成功，其他表示失败 |
+| message | string | 是 | 请求成功或失败的信息 |
+| data | list | 是 | 数据结果 |
+
+**单笔交易信息参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| id | string | 是 | 房间id |
+| order_id | string | 是 | 订单id |
+| order_content | string | 是 | 订单内容 eg："红牛x1"|
+
+**回报示例** 
+
+```
+{
+    "code":"200",
+    "message":"获取成功",
+    "data":[
+        {
+        "id":"001",
+        "order_id":"20200101001001",
+        "order_content":"红牛x1"
+        },
+        {
+        "id":"001",
+        "order_id":"20200101001002",
+        "order_content":"中华x1"
+        }
+    ]
+}
+```
+
+
+
+### /set_order_info
+**描述**：设置订单信息
+
+**方法: post**
+
+**请求参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| id | string | 是 | 房间id |
+| data | list | 是 | 订单信息 |
+
+**单笔交易信息参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| order_id | string | 是 | 订单id |
+| order_content | string | 是 | 订单内容 eg："红牛x1"|
+
+**请求示例：**
+
+```
+{
+    "id":"001",
+    "data":[
+        {
+        "order_id":"20200101001001",
+        "order_content":"红牛x1"
+        },
+        {
+        "order_id":"20200101001002",
+        "order_content":"中华x1"
+        }
+    ]
+}
+```
+
+**回报参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| code | string | 是 | 200表示成功，其他表示失败 |
+| message | string | 是 | 请求成功或失败的信息 |
+| data | list | 是 | 数据结果 |
+
