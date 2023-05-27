@@ -10,6 +10,7 @@ print('path:',STATIC_DIR)
 app = Flask(__name__, static_url_path='', static_folder=STATIC_DIR)
 # app.route装饰器映射URL和执行的函数。这个设置将根URL映射到了hello_world函数上
 @app.route('/')
+@app.route('/dashboard')
 def root():
     file_path = os.path.join(STATIC_DIR,'index.html')
     return send_file(file_path)
