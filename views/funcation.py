@@ -48,6 +48,7 @@ class OrderInfo:
         return {
             "order_id":self.order_id,
             "order_content":self.order_content,
+            "count":self.count
         }
 
 
