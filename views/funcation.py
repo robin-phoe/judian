@@ -5,7 +5,7 @@ from typing import List
 from enum import Enum
 import json
 
-Data_path = pathlib.Path(__file__).parent.parent.parent / 'Data'
+Data_path = pathlib.Path(__file__).parent.parent / 'Data'
 
 class OrderStatus(Enum):
     ENDING = 'ending'
