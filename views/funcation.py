@@ -273,7 +273,7 @@ def delete_history_order_info(request_data):
 def pause_order(request_data):
     order_id = request_data['id']
     for room in RoomInfoList:
-        if room.order_id == order_id:
+        if room.id == order_id:
             if request_data['action'] == OrderStatus.PAUSE.value:
                 room.pause_status = OrderStatus.PAUSE
             elif request_data['action'] == OrderStatus.RUNNING.value:
