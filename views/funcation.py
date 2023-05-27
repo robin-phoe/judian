@@ -27,7 +27,7 @@ class OrderInfo:
                 order_info = OrderInfo()
                 order_info.order_id = order_id
                 order_info.order_content = order_content
-                order_info.count = 1
+                order_info.count = count
                 room.order_info.append(order_info)
                 break
         else:
