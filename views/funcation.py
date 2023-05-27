@@ -42,7 +42,7 @@ class OrderInfo:
                 for order in room.order_info:
                     if order.order_id not in order_id_list:
                         room.order_info.remove(order)
-                        break
+        #todo 增加一个退出
         return True
     def to_json(self):
         return {
