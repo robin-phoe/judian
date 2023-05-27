@@ -16,23 +16,25 @@ class OrderInfo:
     def __init__(self):
         self.order_id = None
         self.order_content = None
+        self.count = 0
     @classmethod
-    def add_order(cls,room_id,order_content):
+    def add_order(cls,room_id,order_content,count):
         for room in RoomInfoList:
             if room.id == room_id:
                 date = datetime.datetime.now().strftime('%Y%m%d')
-                room.max_oders_id += 1
-                order_id = date + room_id + str(room.max_oders_id).zfill(3)
+                room.max_order_id += 1
+                order_id = date + room_id + str(room.max_order_id).zfill(3)
                 order_info = OrderInfo()
                 order_info.order_id = order_id
                 order_info.order_content = order_content
+                order_info.count = 1
                 room.order_info.append(order_info)
                 break
         else:
             print("房间不存在：{}".format(room_id))
             return False
 
-        return order_info
+        return order_id
     @classmethod
     def delete_order(cls,room_id,order_id_list):
         for room in RoomInfoList:
@@ -42,6 +44,12 @@ class OrderInfo:
                         room.order_info.remove(order)
                         break
         return True
+    def to_json(self):
+        return {
+            "order_id":self.order_id,
+            "order_content":self.order_content,
+        }
+
 
 class RoomInfo:
     def __init__(self):
@@ -85,7 +93,7 @@ class RoomInfo:
             'total_time':self.total_time,
             'pause_time':self.pause_time,
             'cost':self.cost,
-            'order_info':self.order_info,
+            'order_info':[order.to_json() for order in self.order_info],
             'pause_status':self.pause_status.value,
             'order_status':self.order_status.value
         }
@@ -150,7 +158,7 @@ CommodityIdList:List[str] = []
 def get_room_info():
     print("get 房间列表：{},len:{}".format(RoomIdList, len(RoomInfoList)))
     for room in RoomInfoList:
-        print("DEBUG get room:{}".format(room.start_time))
+        print("DEBUG get room:{}".format(room.to_dict()))
     return [room.to_dict() for room in RoomInfoList]
 
 def set_room_info(request_data):
@@ -322,7 +330,8 @@ def set_order_info(request_data):
         if order['order_id'] != "":
             request_order_id.append(order['order_id'])
         else:
-            OrderInfo.add_order(room_id,order['order_content'])
+            order_id = OrderInfo.add_order(room_id,order['order_content'],order['count'])
+            request_order_id.append(order_id)
     OrderInfo.delete_order(room_id,request_order_id)
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:

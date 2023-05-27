@@ -544,12 +544,12 @@
     "data":[
         {
         "order_id":"20200101001001",
-        "order_content":"红牛x1"
+        "order_content":"红牛x1",
         "count":"1"
         },
         {
         "order_id":"20200101001002",
-        "order_content":"中华x1"
+        "order_content":"中华x1",
         "count":"1"
         }
     ]

@@ -101,7 +101,7 @@ def get_order_info():
 @app.route('/set_order_info',methods=['POST'])
 def set_order_info():
     request_data = request.json
-    res = set_order_info(request_data)
+    res = funcation.set_order_info(request_data)
     if res:
         data = {"code": 200, "msg": "successed", "data": {}}
     else:
