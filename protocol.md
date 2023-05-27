@@ -534,6 +534,7 @@
 |  ----  | ----  | ---- | ---- |
 | order_id | string | 是 | 订单id |
 | order_content | string | 是 | 订单内容 eg："红牛x1"|
+| count | string | 是 | 订单数量 eg："1"|
 
 **请求示例：**
 
@@ -544,10 +545,12 @@
         {
         "order_id":"20200101001001",
         "order_content":"红牛x1"
+        "count":"1"
         },
         {
         "order_id":"20200101001002",
         "order_content":"中华x1"
+        "count":"1"
         }
     ]
 }
