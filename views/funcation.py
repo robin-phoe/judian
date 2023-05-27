@@ -276,7 +276,7 @@ def pause_order(request_data):
         if room.id == order_id:
             if request_data['action'] == OrderStatus.PAUSE.value:
                 room.pause_status = OrderStatus.PAUSE
-            elif request_data['action'] == OrderStatus.RUNNING.value:
+            elif request_data['action'] == "run":
                 room.pause_status = OrderStatus.RUNNING
             else:
                 print("pause_order:action error.{}".format(request_data['action']))
