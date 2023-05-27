@@ -57,7 +57,7 @@ class RoomInfo:
         self.cost = 0
         self.order_info:List[OrderInfo] = []
         self.max_order_id = 0
-        self.pause_status:OrderStatus = OrderInfo.RUNNING
+        self.pause_status:OrderStatus = OrderStatus.RUNNING
         self.order_status = OrderStatus.ENDING
     def to_dict(self):
         #计算总时长
