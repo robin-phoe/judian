@@ -221,22 +221,6 @@ def set_commodity_info(request_data):
     with open(os.path.join(Data_path,'commodity_info.json'),'w') as f:
         f.write(json.dumps(get_commodity_info()))
     return True
-
-class HistoryOrders:
-    def __init__(self):
-        self.id = None
-        self.date = None
-        self.subtotal = None
-        self.orders:List[HistoryOrderInfo] = []
-
-    def to_json(self):
-        return {
-            'id':self.id,
-            'date':self.date,
-            'subtotal':self.subtotal,
-            'orders':[order.to_json() for order in self.orders]
-        }
-
 class HistoryOrderInfo:
     def __init__(self):
         self.order_id = None
@@ -256,43 +240,100 @@ class HistoryOrderInfo:
             'order_info':self.order_info,
             'cost':self.cost
         }
+    #room order 转换为 history order
+    @classmethod
+    def room_order_to_history_order(cls,room_order:RoomInfo):
+        history_order = HistoryOrderInfo()
+        history_order.order_id = room_order.id
+        history_order.room_name = room_order.name
+        history_order.start_time = room_order.start_time
+        history_order.end_time = room_order.end_time
+        history_order.total_time = room_order.total_time
+        history_order.order_info = room_order.order_info
+        history_order.cost = room_order.cost
+        return history_order
+class HistoryOrders:
+    def __init__(self):
+        self.id = None
+        self.date = None
+        self.subtotal = None
+        self.orders:List[HistoryOrderInfo] = []
+        self.max_id = 0
+
+    def to_json(self):
+        return {
+            'id':self.id,
+            'date':self.date,
+            'subtotal':self.subtotal,
+            'orders':[order.to_json() for order in self.orders]
+        }
+    #新增订单
+    def add_order(self,order:HistoryOrderInfo):
+        self.max_id += 1
+        order.order_id = self.max_id
+        self.orders.append(order)
+        self.subtotal += order.cost
+        return True
+
 
 HistoryOrderList:List[HistoryOrders] = []
 
-def get_history_order_info():
-    #读取history_order_info.json文件
-    history_order_path = os.path.join(Data_path,'history_order_info.json')
-    if not os.path.exists(history_order_path):
-        return []
-    with open(history_order_path,'r') as f:
-        history_order_info = json.loads(f.read())
-    return history_order_info
+# def get_history_order_info():
+#     #读取history_order_info.json文件
+#     history_order_path = os.path.join(Data_path,'history_order_info.json')
+#     if not os.path.exists(history_order_path):
+#         return []
+#     with open(history_order_path,'r') as f:
+#         history_order_info = json.loads(f.read())
+#     return history_order_info
 
-def write_history_order_info(request_data):
+def get_history_order_info():
+    total_cost = 0
+    content = []
+    for history_order in HistoryOrderList:
+        total_cost += history_order.subtotal
+        content.append(history_order.to_json())
+
+    return {"total_cost":total_cost,"content":content}
+
+def write_history_order_info(room_order:RoomInfo):
+    if HistoryOrderList and HistoryOrderList[-1].date == datetime.datetime.now().strftime("%Y-%m-%d"):
+        #今天已经有订单了
+        today_history_order = HistoryOrderList[-1]
+    else:
+        today_history_order = HistoryOrders()
+        today_history_order.id = datetime.datetime.now().strftime("%Y%m%d")
+        today_history_order.date = datetime.datetime.now().strftime("%Y-%m-%d")
+        HistoryOrderList.append(today_history_order)
+    new_history_order = HistoryOrderInfo.room_order_to_history_order(room_order)
+    today_history_order.add_order(new_history_order)
+    #写入文件
+    with open(os.path.join(Data_path,'history_order_info.json'),'w') as f:
+        f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList]))
 
 def delete_history_order_info(request_data):
     order_id = request_data['order_id']
     id_lenth = len(order_id)
-    history_orders = get_history_order_info()
     if id_lenth == 8:
         #删除某天的订单
         #倒叙遍历删除
-        for history_order in history_orders[::-1]:
-            if history_order['id'] == order_id:
-                history_orders.remove(history_order)
+        for history_order in HistoryOrderList[::-1]:
+            if history_order.id == order_id:
+                HistoryOrderList.remove(history_order)
                 break
     elif id_lenth == 11:
         #删除某个订单
-        for history_order in history_orders[::-1]:
-            for order in history_order['orders']:
-                if order['order_id'] == order_id:
-                    history_order['orders'].remove(order)
+        for history_order in HistoryOrderList[::-1]:
+            for order in history_order.orders:
+                if order.order_id == order_id:
+                    history_order.subtotal -= order.cost
+                    history_order.remove(order)
                     break
     else:
         return False
     #写入文件
     with open(os.path.join(Data_path,'history_order_info.json'),'w') as f:
-        f.write(json.dumps(history_orders))
+        f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList]))
     return True
 
 def pause_order(request_data):
@@ -329,6 +370,7 @@ def open_end_order(request_data):
                 print("room {} open order".format(room.id))
 
             elif request_data['action'] == "end":
+                write_history_order_info(room)
                 room.order_status = OrderStatus.ENDING
                 room.start_time = None
                 room.start_time_str = "--:--:--"
