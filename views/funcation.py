@@ -85,6 +85,24 @@ class RoomInfo:
             minutes = str((self.pause_time.seconds - hours * 3600) // 60).zfill(2)
             seconds = str(self.pause_time.seconds - hours * 3600 - minutes * 60).zfill(2)
             self.pause_time = hours + ":" + minutes + ":" + seconds
+        #计算消费金额
+        cost = 0
+        if self.order_status == OrderStatus.RUNNING:
+            piece = max(8,(datetime.datetime.now() - self.start_time).seconds // 60*30)
+            cost =  piece * (float(self.price)/2)
+            #计算订单金额
+            for order in self.order_info[::-1]:
+                com_name = order.order_content.split('x')[0]
+                for com_info in CommodityList:
+                    if com_info.name == com_name:
+                        price = float(com_info.price)
+                        break
+                else:
+                    price = 0
+                    print("商品不存在：{}".format(com_name))
+                    self.order_info.remove(order)
+                cost += order.count * price
+        self.cost = cost
 
         return {
             'id':self.id,
@@ -247,6 +265,8 @@ def get_history_order_info():
     with open(history_order_path,'r') as f:
         history_order_info = json.loads(f.read())
     return history_order_info
+
+def write_history_order_info(request_data):
 
 def delete_history_order_info(request_data):
     order_id = request_data['order_id']
