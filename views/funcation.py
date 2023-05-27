@@ -63,11 +63,11 @@ class RoomInfo:
         #计算总时长
         if self.order_status == OrderStatus.RUNNING:
             #计算时长，并转为时间格式
-            self.total_time = datetime.datetime.now() - self.start_time
-            hours = str(self.total_time.seconds // 3600).zfill(2)
-            minutes = str((self.total_time.seconds - hours * 3600) // 60).zfill(2)
-            seconds = str(self.total_time.seconds - hours * 3600 - minutes * 60).zfill(2)
-            self.total_time = hours + ":" + minutes + ":" + seconds
+            total_time = datetime.datetime.now() - self.start_time
+            hours = total_time.seconds // 3600
+            minutes = (total_time.seconds - hours * 3600) // 60
+            seconds = total_time.seconds - hours * 3600 - minutes * 60
+            self.total_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
         #计算暂停时长
         if self.pause_start_time and self.pause_status == OrderStatus.PAUSE:
             self.pause_time = datetime.datetime.now() - self.pause_start_time
@@ -100,13 +100,15 @@ class RoomInfo:
         else:
             #todo 房间id用完了,完善退出机制
             return False
-        room = cls()
+        room = RoomInfo()
         room.id = room_id
         room.name = room_name
         room.price = room_price
         RoomIdList.append(room_id)
         RoomInfoList.append(room)
-        return room
+        print("新增房间：{}".format(room_id))
+        print("房间列表：{},len:{}".format(RoomIdList,len(RoomInfoList)))
+        return room_id
 
 class CommodityInfo:
     def __init__(self):
@@ -120,6 +122,25 @@ class CommodityInfo:
             'name':self.name,
             'price':self.price
         }
+    @classmethod
+    def add_commodity(cls,commodity_name,commodity_price):
+        #生成商品id
+        for i in range(999):
+            commodity_id = str(i).zfill(3)
+            if commodity_id not in CommodityIdList:
+                break
+        else:
+            #todo 商品id用完了,完善退出机制
+            return False
+        commodity = CommodityInfo()
+        commodity.id = commodity_id
+        commodity.name = commodity_name
+        commodity.price = commodity_price
+        CommodityIdList.append(commodity_id)
+        CommodityList.append(commodity)
+        print("新增商品：{}".format(commodity_id))
+        print("商品列表：{},len:{}".format(CommodityIdList,len(CommodityList)))
+        return commodity_id
 
 RoomInfoList:List[RoomInfo] = []
 RoomIdList:List[str] = []
@@ -127,6 +148,9 @@ CommodityList:List[CommodityInfo] = []
 CommodityIdList:List[str] = []
 
 def get_room_info():
+    print("get 房间列表：{},len:{}".format(RoomIdList, len(RoomInfoList)))
+    for room in RoomInfoList:
+        print("DEBUG get room:{}".format(room.start_time))
     return [room.to_dict() for room in RoomInfoList]
 
 def set_room_info(request_data):
@@ -135,7 +159,8 @@ def set_room_info(request_data):
         if room['id'] != "":
             request_room_id.append(room['id'])
         else:
-            RoomInfo.add_room(room['name'],room['price'])
+            room_id = RoomInfo.add_room(room['name'],room['price'])
+            request_room_id.append(room_id)
     for room in RoomInfoList:
         if room.id not in request_room_id:
             RoomInfoList.remove(room)
@@ -156,7 +181,8 @@ def set_commodity_info(request_data):
         if commodity['id'] != "":
             request_commodity_id.append(commodity['id'])
         else:
-            CommodityInfo.add_commodity(commodity['name'],commodity['price'])
+            com_id = CommodityInfo.add_commodity(commodity['name'],commodity['price'])
+            request_commodity_id.append(com_id)
     for commodity in CommodityList:
         if commodity.id not in request_commodity_id:
             CommodityList.remove(commodity)
@@ -256,17 +282,23 @@ def pause_order(request_data):
     return True
 
 def open_end_order(request_data):
-    order_id = request_data['order_id']
+    order_id = request_data['id']
     for room in RoomInfoList:
-        if room.order_id == order_id:
+        if room.id == order_id:
+            print("room.order_id:{},order_id:{}".format(room.id,order_id))
             if request_data['action'] == "open":
-                room.open_status = OrderStatus.RUNNING
+                room.order_status = OrderStatus.RUNNING
                 #开单操作
-                room.start_time = datetime.datetime.now().strftime('%H:%M:%S')
+                room.start_time = datetime.datetime.now()
+                room.start_time_str = datetime.datetime.now().strftime('%H:%M:%S')
                 # room.end_time = None
+                print("room {} open order".format(room.id))
 
             elif request_data['action'] == "end":
-                room.open_status = OrderStatus.ENDING
+                room.order_status = OrderStatus.ENDING
+                room.start_time = None
+                room.start_time_str = "--:--:--"
+                print("room {} end order".format(room.id))
             else:
                 print("open_end_order:action error.{}".format(request_data['action']))
                 return False

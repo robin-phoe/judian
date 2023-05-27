@@ -43,7 +43,7 @@ def get_commodity_info():
 @app.route('/set_commodity_info',methods=['POST'])
 def set_commodity_info():
     request_data = request.json
-    res = set_commodity_info(request_data)
+    res = funcation.set_commodity_info(request_data)
     if res:
         data = {"code": 200, "msg": "successed", "data": {}}
     else:
@@ -110,5 +110,5 @@ def set_order_info():
 
 if __name__ == '__main__':
     # 运行本项目，host=0.0.0.0可以让其他电脑也能访问到该网站，port指定访问的端口。默认的host是127.0.0.1，port为8888
-    app.run(host='0.0.0.0',port=8888)
+    app.run(host='0.0.0.0',port=8888,debug=True)
     # print(BASE_DIR)
