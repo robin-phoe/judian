@@ -239,6 +239,8 @@ class HistoryOrderInfo:
             'cost':self.cost
         }
 
+HistoryOrderList:List[HistoryOrders] = []
+
 def get_history_order_info():
     #读取history_order_info.json文件
     history_order_path = os.path.join(Data_path,'history_order_info.json')
