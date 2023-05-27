@@ -246,7 +246,7 @@ class HistoryOrderInfo:
         history_order = HistoryOrderInfo()
         history_order.order_id = room_order.id
         history_order.room_name = room_order.name
-        history_order.start_time = room_order.start_time
+        history_order.start_time = room_order.start_time_str
         history_order.end_time = room_order.end_time
         history_order.total_time = room_order.total_time
         history_order.order_info = room_order.order_info
@@ -256,7 +256,7 @@ class HistoryOrders:
     def __init__(self):
         self.id = None
         self.date = None
-        self.subtotal = None
+        self.subtotal = 0
         self.orders:List[HistoryOrderInfo] = []
         self.max_id = 0
 
@@ -270,7 +270,7 @@ class HistoryOrders:
     #新增订单
     def add_order(self,order:HistoryOrderInfo):
         self.max_id += 1
-        order.order_id = self.max_id
+        order.order_id = self.id + str(self.max_id).zfill(3)
         self.orders.append(order)
         self.subtotal += order.cost
         return True
@@ -308,11 +308,12 @@ def write_history_order_info(room_order:RoomInfo):
     new_history_order = HistoryOrderInfo.room_order_to_history_order(room_order)
     today_history_order.add_order(new_history_order)
     #写入文件
+    print("debug history_orders:",[history_orders.to_json() for history_orders in HistoryOrderList])
     with open(os.path.join(Data_path,'history_order_info.json'),'w') as f:
         f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList]))
 
 def delete_history_order_info(request_data):
-    order_id = request_data['order_id']
+    order_id = request_data['id']
     id_lenth = len(order_id)
     if id_lenth == 8:
         #删除某天的订单
@@ -327,7 +328,7 @@ def delete_history_order_info(request_data):
             for order in history_order.orders:
                 if order.order_id == order_id:
                     history_order.subtotal -= order.cost
-                    history_order.remove(order)
+                    history_order.orders.remove(order)
                     break
     else:
         return False
@@ -370,6 +371,7 @@ def open_end_order(request_data):
                 print("room {} open order".format(room.id))
 
             elif request_data['action'] == "end":
+                room.end_time = datetime.datetime.now().strftime('%H:%M:%S')
                 write_history_order_info(room)
                 room.order_status = OrderStatus.ENDING
                 room.start_time = None

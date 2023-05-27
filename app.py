@@ -53,13 +53,15 @@ def set_commodity_info():
 #获取历史订单信息
 @app.route('/get_history_order_info',methods=['GET'])
 def get_history_order_info():
-    content = funcation.get_history_order_info()
-    data = {"code": 200, "msg": "success", "data": content}
+    data = funcation.get_history_order_info()
+    total = data['total_cost']
+    content = data['content']
+    data = {"code": 200, "msg": "success", "total":total, "data": content}
     return jsonify(data)
 
 #删除历史订单信息
-@app.route('/delete_history_order_info',methods=['POST'])
-def delete_history_order_info():
+@app.route('/del_history_order_info',methods=['POST'])
+def del_history_order_info():
     request_data = request.json
     res = funcation.delete_history_order_info(request_data)
     if res:
