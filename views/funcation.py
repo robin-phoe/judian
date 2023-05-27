@@ -39,7 +39,8 @@ class OrderInfo:
     def delete_order(cls,room_id,order_id_list):
         for room in RoomInfoList:
             if room.id == room_id:
-                for order in room.order_info:
+                #倒序遍历删除order
+                for order in room.order_info[::-1]:
                     if order.order_id not in order_id_list:
                         room.order_info.remove(order)
         #todo 增加一个退出
@@ -170,7 +171,8 @@ def set_room_info(request_data):
         else:
             room_id = RoomInfo.add_room(room['name'],room['price'])
             request_room_id.append(room_id)
-    for room in RoomInfoList:
+    #倒叙删除
+    for room in RoomInfoList[::-1]:
         if room.id not in request_room_id:
             RoomInfoList.remove(room)
             RoomIdList.remove(room.id)
@@ -192,7 +194,7 @@ def set_commodity_info(request_data):
         else:
             com_id = CommodityInfo.add_commodity(commodity['name'],commodity['price'])
             request_commodity_id.append(com_id)
-    for commodity in CommodityList:
+    for commodity in CommodityList[::-1]:
         if commodity.id not in request_commodity_id:
             CommodityList.remove(commodity)
             CommodityIdList.remove(commodity.id)
@@ -252,13 +254,14 @@ def delete_history_order_info(request_data):
     history_orders = get_history_order_info()
     if id_lenth == 8:
         #删除某天的订单
-        for history_order in history_orders:
+        #倒叙遍历删除
+        for history_order in history_orders[::-1]:
             if history_order['id'] == order_id:
                 history_orders.remove(history_order)
                 break
     elif id_lenth == 11:
         #删除某个订单
-        for history_order in history_orders:
+        for history_order in history_orders[::-1]:
             for order in history_order['orders']:
                 if order['order_id'] == order_id:
                     history_order['orders'].remove(order)
