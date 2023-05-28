@@ -4,7 +4,7 @@ import os
 import views.funcation as funcation
 import pathlib
 BASE_DIR = pathlib.Path(__file__).parent
-STATIC_DIR = os.path.join(BASE_DIR,'static\\dist') #指定路径
+STATIC_DIR = os.path.join(BASE_DIR,'static/dist') #指定路径
 print('path:',STATIC_DIR)
 
 #初始化数据
