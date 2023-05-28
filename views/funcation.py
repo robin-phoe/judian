@@ -107,7 +107,7 @@ class RoomInfo:
         #计算总时长
         if self.order_status == OrderStatus.RUNNING:
             #计算时长，并转为时间格式
-            total_time = (datetime.datetime.now() - self.start_time).seconds - sub_pause
+            total_time = (datetime.datetime.now() - self.start_time).seconds - self.pause_total_seconds - sub_pause
             hours = total_time // 3600
             minutes = (total_time - hours * 3600) // 60
             seconds = total_time - hours * 3600 - minutes * 60
