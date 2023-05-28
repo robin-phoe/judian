@@ -287,9 +287,15 @@ def set_commodity_info(request_data):
     for commodity in request_data:
         if commodity['id'] != "":
             request_commodity_id.append(commodity['id'])
+            #更新商品信息
+            for commodity_info in CommodityList:
+                if commodity_info.id == commodity['id']:
+                    commodity_info.name = commodity['name']
+                    commodity_info.price = commodity['price']
         else:
             com_id = CommodityInfo.add_commodity(commodity['name'],commodity['price'])
             request_commodity_id.append(com_id)
+
     for commodity in CommodityList[::-1]:
         if commodity.id not in request_commodity_id:
             CommodityList.remove(commodity)
