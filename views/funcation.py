@@ -126,6 +126,7 @@ class RoomInfo:
             'name':self.name,
             'price':self.price,
             'start_time':self.start_time_str,
+            'start_time_datetime':datetime.datetime.strftime(self.start_time,"%Y-%m-%d %H:%M:%S") if self.start_time else None,
             'end_time':self.end_time,
             'total_time':self.total_time,
             'pause_time':self.pause_time,
@@ -166,6 +167,7 @@ class RoomInfo:
         room_info.price = json_data['price']
         room_info.base_cost = json_data['base_cost']
         room_info.start_time_str = json_data['start_time']
+        room_info.start_time = datetime.datetime.strptime(json_data['start_time_datetime'],"%Y-%m-%d %H:%M:%S") if json_data['start_time_datetime'] else None
         room_info.end_time = json_data['end_time']
         room_info.total_time = json_data['total_time']
         room_info.pause_time = json_data['pause_time']
@@ -245,7 +247,7 @@ def set_room_info(request_data):
 
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:
-        f.write(json.dumps(get_room_info()))
+        f.write(json.dumps(get_room_info(),ensure_ascii=False,indent=4))
 
     return True
 
@@ -267,7 +269,7 @@ def set_commodity_info(request_data):
 
     #写入文件
     with open(os.path.join(Data_path,'commodity_info.json'),'w') as f:
-        f.write(json.dumps(get_commodity_info()))
+        f.write(json.dumps(get_commodity_info(),ensure_ascii=False,indent=4))
     return True
 class HistoryOrderInfo:
     def __init__(self):
@@ -380,7 +382,7 @@ def write_history_order_info(room_order:RoomInfo):
     #写入文件
     print("debug history_orders:",[history_orders.to_json() for history_orders in HistoryOrderList])
     with open(os.path.join(Data_path,'history_order_info.json'),'w') as f:
-        f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList]))
+        f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList],ensure_ascii=False,indent=4))
 
 def delete_history_order_info(request_data):
     order_id = request_data['id']
@@ -404,7 +406,7 @@ def delete_history_order_info(request_data):
         return False
     #写入文件
     with open(os.path.join(Data_path,'history_order_info.json'),'w') as f:
-        f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList]))
+        f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList],ensure_ascii=False,indent=4))
     return True
 
 def pause_order(request_data):
@@ -424,7 +426,7 @@ def pause_order(request_data):
         return False
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:
-        f.write(json.dumps(get_room_info()))
+        f.write(json.dumps(get_room_info(),ensure_ascii=False,indent=4))
     return True
 
 def open_end_order(request_data):
@@ -456,7 +458,7 @@ def open_end_order(request_data):
         return False
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:
-        f.write(json.dumps(get_room_info()))
+        f.write(json.dumps(get_room_info(),ensure_ascii=False,indent=4))
     return True
 
 def get_order_info():
@@ -475,7 +477,7 @@ def set_order_info(request_data):
     OrderInfo.delete_order(room_id,request_order_id)
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:
-        f.write(json.dumps(get_room_info()))
+        f.write(json.dumps(get_room_info(),ensure_ascii=False,indent=4))
 
     return True
 
@@ -492,10 +494,16 @@ def load_room_info():
         return False
     #读取文件
     with open(os.path.join(Data_path,'room_info.json'),'r') as f:
-        room_info = json.loads(f.read())
+        content = f.read()
+        room_info = []
+        if content != "":
+            room_info = json.loads(content)
     #转换成对象
     for room in room_info:
-        RoomInfoList.append(RoomInfo.from_json(room))
+        room_info = RoomInfo.from_json(room)
+        RoomInfoList.append(room_info)
+        #添加room id
+        RoomIdList.append(room_info.id)
 
 #加载商品信息
 def load_goods_info():
@@ -504,10 +512,17 @@ def load_goods_info():
         return False
     #读取文件
     with open(os.path.join(Data_path,'commodity_info.json'),'r') as f:
-        goods_info = json.loads(f.read())
+        goods_info = []
+        content = f.read()
+        if content != "":
+            goods_info = json.loads(content)
     #转换成对象
     for com in goods_info:
-        CommodityList.append(CommodityInfo.from_json(com))
+        commodity_info = CommodityInfo.from_json(com)
+        CommodityList.append(commodity_info)
+        #添加commodity id
+        CommodityIdList.append(commodity_info.id)
+
 
 #加载历史订单信息
 def load_history_order_info():
@@ -516,7 +531,10 @@ def load_history_order_info():
         return False
     #读取文件
     with open(os.path.join(Data_path,'history_order_info.json'),'r') as f:
-        history_order_info = json.loads(f.read())
+        history_order_info = []
+        content = f.read()
+        if content != "":
+            history_order_info = json.loads(content)
     #转换成对象
     for history_order in history_order_info:
         HistoryOrderList.append(HistoryOrders.from_json(history_order))
