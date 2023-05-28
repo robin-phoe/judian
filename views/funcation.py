@@ -53,6 +53,17 @@ class OrderInfo:
                         room.order_info.remove(order)
         #todo 增加一个退出
         return True
+    #订单修改
+    @classmethod
+    def modify_order(cls,room_id,order_id,order_content,count):
+        for room in RoomInfoList:
+            if room.id == room_id:
+                for order in room.order_info:
+                    if order.order_id == order_id:
+                        order.order_content = order_content
+                        order.count = count
+                        break
+        return True
 
     #json转对象
     @classmethod
@@ -74,6 +85,7 @@ class RoomInfo:
         self.end_time = "--:--:--"
         self.total_time = "00:00:00"
         self.pause_time = "00:00:00"
+        self.pause_total_seconds = 0
         self.pause_start_time = None
         self.base_cost = 0
         self.add_time_cost = 0
@@ -92,17 +104,18 @@ class RoomInfo:
             seconds = total_time.seconds - hours * 3600 - minutes * 60
             self.total_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
         #计算暂停时长
+        sub_pause = 0
         if self.pause_start_time and self.pause_status == OrderStatus.PAUSE:
-            self.pause_time = datetime.datetime.now() - self.pause_start_time
-            hours = str(self.pause_time.seconds // 3600).zfill(2)
-            minutes = str((self.pause_time.seconds - hours * 3600) // 60).zfill(2)
-            seconds = str(self.pause_time.seconds - hours * 3600 - minutes * 60).zfill(2)
-            self.pause_time = hours + ":" + minutes + ":" + seconds
+            sub_pause = self.pause_total_seconds + (datetime.datetime.now() - self.pause_start_time).seconds
+            hours = sub_pause // 3600
+            minutes = (sub_pause - hours * 3600) // 60
+            seconds = sub_pause - hours * 3600 - minutes * 60
+            self.pause_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
         #计算消费金额
-        cost = float(self.base_cost)
         add_time_cost = 0
         if self.order_status == OrderStatus.RUNNING:
-            piece = (datetime.datetime.now() - self.start_time).seconds // 60 // 10
+            cost = float(self.base_cost)
+            piece = ((datetime.datetime.now() - self.start_time).seconds - sub_pause) // 60 // 10
             add_piece = max(0,piece - 24)
             add_time_cost = add_piece * (float(self.price)/6)
             cost +=  add_time_cost
@@ -118,7 +131,7 @@ class RoomInfo:
                     print("商品不存在：{}".format(com_name))
                     self.order_info.remove(order)
                 cost += order.count * price
-        self.cost = cost
+            self.cost = cost
         self.add_time_cost = add_time_cost
 
         return {
@@ -130,6 +143,8 @@ class RoomInfo:
             'end_time':self.end_time,
             'total_time':self.total_time,
             'pause_time':self.pause_time,
+            'pause_total_seconds':self.pause_total_seconds,
+            'pause_start_time':datetime.datetime.strftime(self.pause_start_time,"%Y-%m-%d %H:%M:%S") if self.pause_start_time else None,
             'base_cost':self.base_cost,
             'add_time_cost':self.add_time_cost,
             'cost':self.cost,
@@ -171,6 +186,8 @@ class RoomInfo:
         room_info.end_time = json_data['end_time']
         room_info.total_time = json_data['total_time']
         room_info.pause_time = json_data['pause_time']
+        room_info.pause_total_seconds = json_data['pause_total_seconds']
+        room_info.pause_start_time = datetime.datetime.strptime(json_data['pause_start_time'],"%Y-%m-%d %H:%M:%S") if json_data['pause_start_time'] else None
         room_info.base_cost = json_data['base_cost']
         room_info.add_time_cost = json_data['add_time_cost']
         room_info.cost = json_data['cost']
@@ -278,7 +295,7 @@ class HistoryOrderInfo:
         self.start_time = None
         self.end_time = None
         self.total_time = None
-        self.order_info = None
+        self.order_info:[OrderInfo] = []
         self.cost = None
     def to_json(self):
         return {
@@ -287,7 +304,7 @@ class HistoryOrderInfo:
             'start_time':self.start_time,
             'end_time':self.end_time,
             'total_time':self.total_time,
-            'order_info':self.order_info,
+            'order_info':[order.to_json() for order in self.order_info],
             'cost':self.cost
         }
     #room order 转换为 history order
@@ -311,7 +328,7 @@ class HistoryOrderInfo:
         history_order.start_time = json_data['start_time']
         history_order.end_time = json_data['end_time']
         history_order.total_time = json_data['total_time']
-        history_order.order_info = json_data['order_info']
+        history_order.order_info = [OrderInfo.from_json(order) for order in json_data['order_info']]
         history_order.cost = json_data['cost']
         return history_order
 class HistoryOrders:
@@ -415,8 +432,10 @@ def pause_order(request_data):
         if room.id == order_id:
             if request_data['action'] == OrderStatus.PAUSE.value:
                 room.pause_status = OrderStatus.PAUSE
+                room.pause_start_time = datetime.datetime.now()
             elif request_data['action'] == "run":
                 room.pause_status = OrderStatus.RUNNING
+                room.pause_total_seconds += (datetime.datetime.now() - room.pause_start_time).seconds
             else:
                 print("pause_order:action error.{}".format(request_data['action']))
                 return False
@@ -438,8 +457,12 @@ def open_end_order(request_data):
                 room.order_status = OrderStatus.RUNNING
                 #开单操作
                 room.start_time = datetime.datetime.now()
+                room.end_time = "--:--:--"
+                room.total_time = "00:00:00"
+                room.pause_time = "00:00:00"
+                room.cost = 0
+                room.order_info = []
                 room.start_time_str = datetime.datetime.now().strftime('%H:%M:%S')
-                # room.end_time = None
                 print("room {} open order".format(room.id))
 
             elif request_data['action'] == "end":
@@ -447,7 +470,9 @@ def open_end_order(request_data):
                 write_history_order_info(room)
                 room.order_status = OrderStatus.ENDING
                 room.start_time = None
-                room.start_time_str = "--:--:--"
+                room.pause_total_seconds = 0
+                room.pause_status = OrderStatus.RUNNING
+                room.pause_start_time = None
                 print("room {} end order".format(room.id))
             else:
                 print("open_end_order:action error.{}".format(request_data['action']))
@@ -471,6 +496,7 @@ def set_order_info(request_data):
     for order in order_data:
         if order['order_id'] != "":
             request_order_id.append(order['order_id'])
+            OrderInfo.modify_order(room_id,order['order_id'],order['order_content'],order['count'])
         else:
             order_id = OrderInfo.add_order(room_id,order['order_content'],order['count'])
             request_order_id.append(order_id)
