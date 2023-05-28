@@ -257,6 +257,13 @@ def set_room_info(request_data):
     for room in request_data:
         if room['id'] != "":
             request_room_id.append(room['id'])
+            #更新房间信息
+            for room_info in RoomInfoList:
+                if room_info.id == room['id']:
+                    room_info.name = room['name']
+                    room_info.price = room['price']
+                    room_info.base_price = room['base_price']
+                    break
         else:
             room_id = RoomInfo.add_room(room['name'],room['price'],room['base_price'])
             request_room_id.append(room_id)
