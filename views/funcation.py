@@ -103,11 +103,13 @@ class RoomInfo:
             minutes = (sub_pause - hours * 3600) // 60
             seconds = sub_pause - hours * 3600 - minutes * 60
             self.pause_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
+        else:
+            sub_pause = self.pause_total_seconds
 
         #计算总时长
         if self.order_status == OrderStatus.RUNNING:
             #计算时长，并转为时间格式
-            total_time = (datetime.datetime.now() - self.start_time).seconds - self.pause_total_seconds - sub_pause
+            total_time = (datetime.datetime.now() - self.start_time).seconds - sub_pause
             hours = total_time // 3600
             minutes = (total_time - hours * 3600) // 60
             seconds = total_time - hours * 3600 - minutes * 60
@@ -437,7 +439,8 @@ def pause_order(request_data):
                 room.pause_start_time = datetime.datetime.now()
             elif request_data['action'] == "run":
                 room.pause_status = OrderStatus.RUNNING
-                room.pause_total_seconds += (datetime.datetime.now() - room.pause_start_time).seconds
+                if room.pause_start_time:
+                    room.pause_total_seconds += (datetime.datetime.now() - room.pause_start_time).seconds
             else:
                 print("pause_order:action error.{}".format(request_data['action']))
                 return False
