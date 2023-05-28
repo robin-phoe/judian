@@ -99,7 +99,7 @@ class RoomInfo:
             seconds = str(self.pause_time.seconds - hours * 3600 - minutes * 60).zfill(2)
             self.pause_time = hours + ":" + minutes + ":" + seconds
         #计算消费金额
-        cost = self.base_cost
+        cost = float(self.base_cost)
         add_time_cost = 0
         if self.order_status == OrderStatus.RUNNING:
             piece = (datetime.datetime.now() - self.start_time).seconds // 60 // 10
