@@ -95,14 +95,6 @@ class RoomInfo:
         self.pause_status:OrderStatus = OrderStatus.RUNNING
         self.order_status = OrderStatus.ENDING
     def to_dict(self):
-        #计算总时长
-        if self.order_status == OrderStatus.RUNNING:
-            #计算时长，并转为时间格式
-            total_time = datetime.datetime.now() - self.start_time
-            hours = total_time.seconds // 3600
-            minutes = (total_time.seconds - hours * 3600) // 60
-            seconds = total_time.seconds - hours * 3600 - minutes * 60
-            self.total_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
         #计算暂停时长
         sub_pause = 0
         if self.pause_start_time and self.pause_status == OrderStatus.PAUSE:
@@ -111,6 +103,16 @@ class RoomInfo:
             minutes = (sub_pause - hours * 3600) // 60
             seconds = sub_pause - hours * 3600 - minutes * 60
             self.pause_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
+
+        #计算总时长
+        if self.order_status == OrderStatus.RUNNING:
+            #计算时长，并转为时间格式
+            total_time = (datetime.datetime.now() - self.start_time).seconds - sub_pause
+            hours = total_time // 3600
+            minutes = (total_time - hours * 3600) // 60
+            seconds = total_time - hours * 3600 - minutes * 60
+            self.total_time = str(hours).zfill(2) + ":" + str(minutes).zfill(2) + ":" + str(seconds).zfill(2)
+
         #计算消费金额
         add_time_cost = 0
         if self.order_status == OrderStatus.RUNNING:
