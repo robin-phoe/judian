@@ -6,6 +6,10 @@ import pathlib
 BASE_DIR = pathlib.Path(__file__).parent
 STATIC_DIR = os.path.join(BASE_DIR,'static\\dist') #指定路径
 print('path:',STATIC_DIR)
+
+#初始化数据
+funcation.init_data()
+
 # 传入__name__初始化一个Flask实例
 app = Flask(__name__, static_url_path='', static_folder=STATIC_DIR)
 # app.route装饰器映射URL和执行的函数。这个设置将根URL映射到了hello_world函数上

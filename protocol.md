@@ -38,6 +38,8 @@
 | end_time | string | 是 | 结束时间，空值为"--:--:--" |
 | total_time | string | 是 | 当前时长 |
 | pause_time | string | 是 | 暂停时长 |
+| base_cost | string | 是 | 基础费用 |
+| add_time_cost | string | 是 | 加时费用 |
 | cost | string | 是 | 总费用 |
 | order_info | list | 是 | 订单详情#todo，考虑什么格式展示？ |
 | pause_status | string | 是 | 暂停状态， 'running'：进行中,'pause':暂停中|
@@ -66,6 +68,8 @@
         "end_time": "--:--:--",
         "total_time": "03:00:00",
         "pause_time": "00:00:00",
+        "base_cost": "150.0",
+        "add_time_cost": "50.0",
         "cost": "200.0",
         "order_info": [
             {
@@ -112,6 +116,7 @@
 | id | string | 是 | 房间id,新增房间id为"",|
 | name | string | 是 | 房间名 |
 | price | string | 是 | 房间单价|
+| base_price | string | 是 | 基础费用 |
 
 **请求示例：**
 
@@ -120,12 +125,14 @@
     {
         "id":"001",
         "name":"房间一",
-        "price":"50"
+        "price":"50",
+        "base_price":"150"
     },
     {
         "id":"002",
         "name":"房间二",
-        "price":"50"
+        "price":"50",
+        "base_price":"150"
     }
 ]
 

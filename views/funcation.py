@@ -35,6 +35,14 @@ class OrderInfo:
             return False
 
         return order_id
+
+    def to_json(self):
+        return {
+            "order_id":self.order_id,
+            "order_content":self.order_content,
+            "count":self.count
+        }
+
     @classmethod
     def delete_order(cls,room_id,order_id_list):
         for room in RoomInfoList:
@@ -45,12 +53,15 @@ class OrderInfo:
                         room.order_info.remove(order)
         #todo 增加一个退出
         return True
-    def to_json(self):
-        return {
-            "order_id":self.order_id,
-            "order_content":self.order_content,
-            "count":self.count
-        }
+
+    #json转对象
+    @classmethod
+    def from_json(cls,json_data):
+        order_info = OrderInfo()
+        order_info.order_id = json_data['order_id']
+        order_info.order_content = json_data['order_content']
+        order_info.count = json_data['count']
+        return order_info
 
 
 class RoomInfo:
@@ -64,6 +75,8 @@ class RoomInfo:
         self.total_time = "00:00:00"
         self.pause_time = "00:00:00"
         self.pause_start_time = None
+        self.base_cost = 0
+        self.add_time_cost = 0
         self.cost = 0
         self.order_info:List[OrderInfo] = []
         self.max_order_id = 0
@@ -86,10 +99,13 @@ class RoomInfo:
             seconds = str(self.pause_time.seconds - hours * 3600 - minutes * 60).zfill(2)
             self.pause_time = hours + ":" + minutes + ":" + seconds
         #计算消费金额
-        cost = 0
+        cost = self.base_cost
+        add_time_cost = 0
         if self.order_status == OrderStatus.RUNNING:
-            piece = max(8,(datetime.datetime.now() - self.start_time).seconds // 60*30)
-            cost =  piece * (float(self.price)/2)
+            piece = (datetime.datetime.now() - self.start_time).seconds // 60 // 10
+            add_piece = max(0,piece - 24)
+            add_time_cost = add_piece * (float(self.price)/6)
+            cost +=  add_time_cost
             #计算订单金额
             for order in self.order_info[::-1]:
                 com_name = order.order_content.split('x')[0]
@@ -103,6 +119,7 @@ class RoomInfo:
                     self.order_info.remove(order)
                 cost += order.count * price
         self.cost = cost
+        self.add_time_cost = add_time_cost
 
         return {
             'id':self.id,
@@ -112,6 +129,8 @@ class RoomInfo:
             'end_time':self.end_time,
             'total_time':self.total_time,
             'pause_time':self.pause_time,
+            'base_cost':self.base_cost,
+            'add_time_cost':self.add_time_cost,
             'cost':self.cost,
             'order_info':[order.to_json() for order in self.order_info],
             'pause_status':self.pause_status.value,
@@ -119,7 +138,7 @@ class RoomInfo:
         }
     #新增房间
     @classmethod
-    def add_room(cls,room_name,room_price):
+    def add_room(cls,room_name,room_price,room_base_cost):
         #生成房间id
         for i in range(999):
             room_id = str(i).zfill(3)
@@ -132,11 +151,31 @@ class RoomInfo:
         room.id = room_id
         room.name = room_name
         room.price = room_price
+        room.base_cost = room_base_cost
         RoomIdList.append(room_id)
         RoomInfoList.append(room)
         print("新增房间：{}".format(room_id))
         print("房间列表：{},len:{}".format(RoomIdList,len(RoomInfoList)))
         return room_id
+    #json转对象
+    @classmethod
+    def from_json(cls,json_data):
+        room_info = RoomInfo()
+        room_info.id = json_data['id']
+        room_info.name = json_data['name']
+        room_info.price = json_data['price']
+        room_info.base_cost = json_data['base_cost']
+        room_info.start_time_str = json_data['start_time']
+        room_info.end_time = json_data['end_time']
+        room_info.total_time = json_data['total_time']
+        room_info.pause_time = json_data['pause_time']
+        room_info.base_cost = json_data['base_cost']
+        room_info.add_time_cost = json_data['add_time_cost']
+        room_info.cost = json_data['cost']
+        room_info.pause_status = OrderStatus(json_data['pause_status'])
+        room_info.order_status = OrderStatus(json_data['order_status'])
+        room_info.order_info = [OrderInfo.from_json(order) for order in json_data['order_info']]
+        return room_info
 
 class CommodityInfo:
     def __init__(self):
@@ -170,6 +209,15 @@ class CommodityInfo:
         print("商品列表：{},len:{}".format(CommodityIdList,len(CommodityList)))
         return commodity_id
 
+    #json转对象
+    @classmethod
+    def from_json(cls,json_data):
+        commodity_info = CommodityInfo()
+        commodity_info.id = json_data['id']
+        commodity_info.name = json_data['name']
+        commodity_info.price = json_data['price']
+        return commodity_info
+
 RoomInfoList:List[RoomInfo] = []
 RoomIdList:List[str] = []
 CommodityList:List[CommodityInfo] = []
@@ -187,7 +235,7 @@ def set_room_info(request_data):
         if room['id'] != "":
             request_room_id.append(room['id'])
         else:
-            room_id = RoomInfo.add_room(room['name'],room['price'])
+            room_id = RoomInfo.add_room(room['name'],room['price'],room['base_price'])
             request_room_id.append(room_id)
     #倒叙删除
     for room in RoomInfoList[::-1]:
@@ -252,6 +300,18 @@ class HistoryOrderInfo:
         history_order.order_info = room_order.order_info
         history_order.cost = room_order.cost
         return history_order
+    #json转对象
+    @classmethod
+    def from_json(cls,json_data):
+        history_order = HistoryOrderInfo()
+        history_order.order_id = json_data['order_id']
+        history_order.room_name = json_data['room_name']
+        history_order.start_time = json_data['start_time']
+        history_order.end_time = json_data['end_time']
+        history_order.total_time = json_data['total_time']
+        history_order.order_info = json_data['order_info']
+        history_order.cost = json_data['cost']
+        return history_order
 class HistoryOrders:
     def __init__(self):
         self.id = None
@@ -274,6 +334,16 @@ class HistoryOrders:
         self.orders.append(order)
         self.subtotal += order.cost
         return True
+    #json转对象
+    @classmethod
+    def from_json(cls,json_data):
+        history_orders = HistoryOrders()
+        history_orders.id = json_data['id']
+        history_orders.date = json_data['date']
+        history_orders.subtotal = json_data['subtotal']
+        history_orders.orders = [HistoryOrderInfo.from_json(order) for order in json_data['orders']]
+        history_orders.max_id = len(history_orders.orders)
+        return history_orders
 
 
 HistoryOrderList:List[HistoryOrders] = []
@@ -408,3 +478,47 @@ def set_order_info(request_data):
         f.write(json.dumps(get_room_info()))
 
     return True
+
+
+def init_data():
+    load_room_info()
+    load_goods_info()
+    load_history_order_info()
+
+#加载房间信息
+def load_room_info():
+    #判断文件是否存在
+    if not os.path.exists(os.path.join(Data_path,'room_info.json')):
+        return False
+    #读取文件
+    with open(os.path.join(Data_path,'room_info.json'),'r') as f:
+        room_info = json.loads(f.read())
+    #转换成对象
+    for room in room_info:
+        RoomInfoList.append(RoomInfo.from_json(room))
+
+#加载商品信息
+def load_goods_info():
+    # 判断文件是否存在
+    if not os.path.exists(os.path.join(Data_path, 'commodity_info.json')):
+        return False
+    #读取文件
+    with open(os.path.join(Data_path,'commodity_info.json'),'r') as f:
+        goods_info = json.loads(f.read())
+    #转换成对象
+    for com in goods_info:
+        CommodityList.append(CommodityInfo.from_json(com))
+
+#加载历史订单信息
+def load_history_order_info():
+    # 判断文件是否存在
+    if not os.path.exists(os.path.join(Data_path, 'history_order_info.json')):
+        return False
+    #读取文件
+    with open(os.path.join(Data_path,'history_order_info.json'),'r') as f:
+        history_order_info = json.loads(f.read())
+    #转换成对象
+    for history_order in history_order_info:
+        HistoryOrderList.append(HistoryOrders.from_json(history_order))
+
+
