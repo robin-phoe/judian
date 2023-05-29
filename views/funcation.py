@@ -135,8 +135,9 @@ class RoomInfo:
                     print("商品不存在：{}".format(com_name))
                     self.order_info.remove(order)
                 cost += order.count * price
-            self.cost = cost
-        self.add_time_cost = add_time_cost
+            #转为str，保留两位小数
+            self.cost = "%.2f" % cost
+        self.add_time_cost = "%.2f" % add_time_cost
 
         return {
             'id':self.id,
@@ -368,7 +369,7 @@ class HistoryOrders:
         self.max_id += 1
         order.order_id = self.id + str(self.max_id).zfill(3)
         self.orders.append(order)
-        self.subtotal += order.cost
+        self.subtotal += float(order.cost)
         return True
     #json转对象
     @classmethod
@@ -433,7 +434,7 @@ def delete_history_order_info(request_data):
         for history_order in HistoryOrderList[::-1]:
             for order in history_order.orders:
                 if order.order_id == order_id:
-                    history_order.subtotal -= order.cost
+                    history_order.subtotal -= float(order.cost)
                     history_order.orders.remove(order)
                     break
     else:
@@ -444,9 +445,13 @@ def delete_history_order_info(request_data):
     return True
 
 def pause_order(request_data):
-    order_id = request_data['id']
+    room_id = request_data['id']
     for room in RoomInfoList:
-        if room.id == order_id:
+        if room.id == room_id:
+            #判断是否是开单状态
+            if room.order_status != OrderStatus.RUNNING:
+                print("pause_order:order_status warning.{}".format(room.order_status))
+                return False
             if request_data['action'] == OrderStatus.PAUSE.value:
                 room.pause_status = OrderStatus.PAUSE
                 room.pause_start_time = datetime.datetime.now()
@@ -459,7 +464,7 @@ def pause_order(request_data):
                 return False
             break
     else:
-        print("pause_order:order_id error.{}".format(order_id))
+        print("pause_order:order_id error.{}".format(room_id))
         return False
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:
@@ -478,6 +483,8 @@ def open_end_order(request_data):
                 room.end_time = "--:--:--"
                 room.total_time = "00:00:00"
                 room.pause_time = "00:00:00"
+                room.pause_start_time = None
+                room.pause_total_seconds = 0
                 room.cost = 0
                 room.order_info = []
                 room.start_time_str = datetime.datetime.now().strftime('%H:%M:%S')
@@ -509,6 +516,13 @@ def get_order_info():
 
 def set_order_info(request_data):
     room_id = request_data['id']
+    #判断房间状态
+    for room in RoomInfoList:
+        if room.id == room_id:
+            if room.order_status != OrderStatus.RUNNING:
+                print("set_order_info:order_status warning.{}".format(room.order_status))
+                return False
+            break
     order_data = request_data['data']
     request_order_id = []
     for order in order_data:

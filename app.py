@@ -81,9 +81,9 @@ def pause_order():
     request_data = request.json
     res = funcation.pause_order(request_data)
     if res:
-        data = {"code": 200, "msg": "successed", "data": {}}
+        data = {"code": 200, "msg": "暂停/恢复 操作成功", "data": {}}
     else:
-        data = {"code": 500, "msg": "failed", "data": {}}
+        data = {"code": 500, "msg": "暂停/恢复 操作失败！", "data": {}}
     return jsonify(data)
 
 #开始/结束订单
@@ -110,9 +110,9 @@ def set_order_info():
     request_data = request.json
     res = funcation.set_order_info(request_data)
     if res:
-        data = {"code": 200, "msg": "successed", "data": {}}
+        data = {"code": 200, "msg": "订单操作成功", "data": {}}
     else:
-        data = {"code": 500, "msg": "failed", "data": {}}
+        data = {"code": 500, "msg": "订单操作拒绝！", "data": {}}
     return jsonify(data)
 
 if __name__ == '__main__':
