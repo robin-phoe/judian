@@ -124,7 +124,7 @@ class RoomInfo:
             #手动调整金额
             cost += float(self.adjust_money)
             piece = ((datetime.datetime.now() - self.start_time).seconds - sub_pause) // 60 // 10
-            add_piece = max(0,piece - self.base_hours*6)
+            add_piece = max(0,piece - float(self.base_hours)*6)
             add_time_cost = add_piece * (float(self.price)/6)
             cost +=  add_time_cost
             #计算订单金额
