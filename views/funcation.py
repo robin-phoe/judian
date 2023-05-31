@@ -263,7 +263,7 @@ def set_room_info(request_data):
                 if room_info.id == room['id']:
                     room_info.name = room['name']
                     room_info.price = room['price']
-                    room_info.base_price = room['base_price']
+                    room_info.base_cost = room['base_price']
                     break
         else:
             room_id = RoomInfo.add_room(room['name'],room['price'],room['base_price'])
