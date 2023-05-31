@@ -12,6 +12,7 @@
 | /open_end_order | 开始/结束订单 |  |
 | /get_order_info | 获取订单（已购买商品）信息 | 可能用不上这个接口 |
 | /set_order_info | 订单信息设置（变更已购买商品，新增和删除） |  |
+| /change_room_order | 变更房间订单信息 |  |
 
 
 ### /get_room_info
@@ -39,7 +40,9 @@
 | total_time | string | 是 | 当前时长 |
 | pause_time | string | 是 | 暂停时长 |
 | base_cost | string | 是 | 基础费用 |
+| base_hours | string | 是 | 基础时长 |
 | add_time_cost | string | 是 | 加时费用 |
+| adjust_money | string | 是 | 手动调差金额 |
 | cost | string | 是 | 总费用 |
 | order_info | list | 是 | 订单详情#todo，考虑什么格式展示？ |
 | pause_status | string | 是 | 暂停状态， 'running'：进行中,'pause':暂停中|
@@ -69,7 +72,9 @@
         "total_time": "03:00:00",
         "pause_time": "00:00:00",
         "base_cost": "150.0",
+        "base_hours": "4.0",
         "add_time_cost": "50.0",
+        "adjust_money": "0.0",
         "cost": "200.0",
         "order_info": [
             {
@@ -85,21 +90,7 @@
         ],
         "pause_status": "running",
         "order_status": "running"
-    },
-    {
-        "id": "002",
-        "name": "房间2",
-        "price": "50.0",
-        "start_time": "--:--:--",
-        "end_time": "--:--:--",
-        "total_time": "00:00:00",
-        "pause_time": "00:00:00",
-        "cost": "0.0",
-        "order_info": [],
-        "pause_status": "running",
-        "order_status": "running"
     }
-
 ]
 }
 ```
@@ -117,6 +108,7 @@
 | name | string | 是 | 房间名 |
 | price | string | 是 | 房间单价|
 | base_price | string | 是 | 基础费用 |
+| base_hours | string | 是 | 基础时长 |
 
 **请求示例：**
 
@@ -126,13 +118,15 @@
         "id":"001",
         "name":"房间一",
         "price":"50",
-        "base_price":"150"
+        "base_price":"150",
+        "base_hours":"3"
     },
     {
         "id":"002",
         "name":"房间二",
         "price":"50",
-        "base_price":"150"
+        "base_price":"150",
+        "base_hours":"3"
     }
 ]
 
@@ -573,4 +567,46 @@
 | code | string | 是 | 200表示成功，其他表示失败 |
 | message | string | 是 | 请求成功或失败的信息 |
 | data | list | 是 | 数据结果 |
+
+
+### /change_room_order
+**描述**：变更房间订单信息
+
+**方法: post**
+
+**请求参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| id | string | 是 | 房间id |
+| start_time | string | 是 | 开始时间 "%Y-%m-%d %H%M%S" |
+| adjust_money | string | 是 | 调整金额,默认是0 |
+
+**请求示例：**
+
+```
+{
+    "id":"001",
+    "start_time":"2020-01-01 12:00:00",
+    "adjust_money":"0"
+}
+```
+
+**回报参数：**
+
+|  参数名 | 类型 | 是否必须 | 说明 |
+|  ----  | ----  | ---- | ---- |
+| code | string | 是 | 200表示成功，其他表示失败 |
+| message | string | 是 | 请求成功或失败的信息 |
+| data | list | 是 | 数据结果 |
+
+**回报示例** 
+
+```
+{
+    "code":"200",
+    "message":"变更成功",
+    "data":{}
+}
+```
 
