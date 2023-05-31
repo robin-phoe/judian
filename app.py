@@ -115,6 +115,17 @@ def set_order_info():
         data = {"code": 500, "msg": "订单操作拒绝！", "data": {}}
     return jsonify(data)
 
+#变更房间订单信息
+@app.route('/change_room_order',methods=['POST'])
+def set_order_info():
+    request_data = request.json
+    res = funcation.change_room_order(request_data)
+    if res:
+        data = {"code": 200, "msg": "订单操作成功", "data": {}}
+    else:
+        data = {"code": 500, "msg": "订单操作拒绝！", "data": {}}
+    return jsonify(data)
+
 if __name__ == '__main__':
     # 运行本项目，host=0.0.0.0可以让其他电脑也能访问到该网站，port指定访问的端口。默认的host是127.0.0.1，port为8888
     app.run(host='0.0.0.0',port=8888,debug=True)

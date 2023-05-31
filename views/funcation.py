@@ -88,7 +88,9 @@ class RoomInfo:
         self.pause_total_seconds = 0
         self.pause_start_time = None
         self.base_cost = 0
+        self.base_hours = 0
         self.add_time_cost = 0
+        self.adjust_money = 0
         self.cost = 0
         self.order_info:List[OrderInfo] = []
         self.max_order_id = 0
@@ -119,8 +121,10 @@ class RoomInfo:
         add_time_cost = 0
         if self.order_status == OrderStatus.RUNNING:
             cost = float(self.base_cost)
+            #手动调整金额
+            cost += float(self.adjust_money)
             piece = ((datetime.datetime.now() - self.start_time).seconds - sub_pause) // 60 // 10
-            add_piece = max(0,piece - 24)
+            add_piece = max(0,piece - self.base_hours*6)
             add_time_cost = add_piece * (float(self.price)/6)
             cost +=  add_time_cost
             #计算订单金额
@@ -151,7 +155,9 @@ class RoomInfo:
             'pause_total_seconds':self.pause_total_seconds,
             'pause_start_time':datetime.datetime.strftime(self.pause_start_time,"%Y-%m-%d %H:%M:%S") if self.pause_start_time else None,
             'base_cost':self.base_cost,
+            'base_hours':self.base_hours,
             'add_time_cost':self.add_time_cost,
+            'adjust_money':self.adjust_money,
             'cost':self.cost,
             'order_info':[order.to_json() for order in self.order_info],
             'pause_status':self.pause_status.value,
@@ -194,7 +200,9 @@ class RoomInfo:
         room_info.pause_total_seconds = json_data['pause_total_seconds']
         room_info.pause_start_time = datetime.datetime.strptime(json_data['pause_start_time'],"%Y-%m-%d %H:%M:%S") if json_data['pause_start_time'] else None
         room_info.base_cost = json_data['base_cost']
+        room_info.base_hours = json_data['base_hours']
         room_info.add_time_cost = json_data['add_time_cost']
+        room_info.adjust_money = json_data['adjust_money']
         room_info.cost = json_data['cost']
         room_info.pause_status = OrderStatus(json_data['pause_status'])
         room_info.order_status = OrderStatus(json_data['order_status'])
@@ -264,6 +272,7 @@ def set_room_info(request_data):
                     room_info.name = room['name']
                     room_info.price = room['price']
                     room_info.base_cost = room['base_price']
+                    room_info.base_hours = room['base_hours']
                     break
         else:
             room_id = RoomInfo.add_room(room['name'],room['price'],room['base_price'])
@@ -596,5 +605,24 @@ def load_history_order_info():
     #转换成对象
     for history_order in history_order_info:
         HistoryOrderList.append(HistoryOrders.from_json(history_order))
+
+#变更房间订单信息
+def change_room_order(request_data):
+    room_id = request_data['id']
+    start_time = request_data['start_time']
+    start_time = datetime.datetime.strptime(start_time,'%Y-%m-%d %H:%M:%S')
+    adjust_money = request_data['adjust_money']
+    for room in RoomInfoList:
+        if room.id == room_id:
+            room.start_time = start_time
+            room.adjust_money = adjust_money
+            break
+    else:
+        print("change_room_order:room_id error.{}".format(room_id))
+        return False
+    #写入文件
+    with open(os.path.join(Data_path,'room_info.json'),'w') as f:
+        f.write(json.dumps(get_room_info(),ensure_ascii=False,indent=4))
+    return True
 
 
