@@ -147,7 +147,7 @@ class RoomInfo:
             'id':self.id,
             'name':self.name,
             'price':self.price,
-            'start_time':self.start_time_str,
+            'start_time':datetime.datetime.strftime(self.start_time,"%H:%M:%S") if self.start_time else "--:--:--",#self.start_time_str,
             'start_time_datetime':datetime.datetime.strftime(self.start_time,"%Y-%m-%d %H:%M:%S") if self.start_time else None,
             'end_time':self.end_time,
             'total_time':self.total_time,
@@ -611,6 +611,7 @@ def change_room_order(request_data):
     room_id = request_data['id']
     start_time = request_data['start_time']
     start_time = datetime.datetime.strptime(start_time,'%Y-%m-%d %H:%M:%S')
+    print('DEBUG start_time:',start_time,type(start_time))
     adjust_money = request_data['adjust_money']
     for room in RoomInfoList:
         if room.id == room_id:
@@ -618,7 +619,7 @@ def change_room_order(request_data):
             room.adjust_money = adjust_money
             break
     else:
-        print("change_room_order:room_id error.{}".format(room_id))
+        print("change_room_order:room_id error:{}".format(room_id))
         return False
     #写入文件
     with open(os.path.join(Data_path,'room_info.json'),'w') as f:
