@@ -117,7 +117,7 @@ def set_order_info():
 
 #变更房间订单信息
 @app.route('/change_room_order',methods=['POST'])
-def set_order_info():
+def change_room_order():
     request_data = request.json
     res = funcation.change_room_order(request_data)
     if res:
