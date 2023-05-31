@@ -494,6 +494,7 @@ def open_end_order(request_data):
                 room.pause_time = "00:00:00"
                 room.pause_start_time = None
                 room.pause_total_seconds = 0
+                room.adjust_money = 0
                 room.cost = 0
                 room.order_info = []
                 room.start_time_str = datetime.datetime.now().strftime('%H:%M:%S')
