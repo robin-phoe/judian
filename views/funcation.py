@@ -1,11 +1,15 @@
 import datetime
 import os.path
 import pathlib
+import webbrowser
 from typing import List
 from enum import Enum
 import json
 
-Data_path = pathlib.Path(__file__).parent.parent / 'Data'
+from views.print_funcation import print_bill
+
+PRROJET_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+Data_path = BILL_FILE_NAME = os.path.join(PRROJET_DIR,'Judian','Data')
 
 class OrderStatus(Enum):
     ENDING = 'ending'
@@ -96,6 +100,7 @@ class RoomInfo:
         self.max_order_id = 0
         self.pause_status:OrderStatus = OrderStatus.RUNNING
         self.order_status = OrderStatus.ENDING
+        self.bill_info:List[dict] = []
     def to_dict(self):
         #计算暂停时长
         sub_pause = 0
@@ -121,12 +126,30 @@ class RoomInfo:
         add_time_cost = 0
         if self.order_status == OrderStatus.RUNNING:
             cost = float(self.base_cost)
+            self.bill_info = []
             #手动调整金额
             cost += float(self.adjust_money)
+            #套餐费用加入bill
+            self.bill_info.append({
+                "name":"套餐费用",
+                "count":"1",
+                "price":str(self.base_cost),
+                "total_price":"%.2f" % float(self.base_cost),
+            })
+
+
             piece = ((datetime.datetime.now() - self.start_time).seconds - sub_pause) // 60 // 10
             add_piece = max(0,piece - float(self.base_hours)*6)
             add_time_cost = add_piece * (float(self.price)/6)
             cost +=  add_time_cost
+
+            #加时费用
+            self.bill_info.append({
+                "name":"加时费用",
+                "count":"%.2f" % float(add_piece/6),
+                "price":str(self.price),
+                "total_price":"%.2f" % add_time_cost,
+            })
             #计算订单金额
             for order in self.order_info[::-1]:
                 com_name = order.order_content.split('x')[0]
@@ -139,6 +162,20 @@ class RoomInfo:
                     print("商品不存在：{}".format(com_name))
                     self.order_info.remove(order)
                 cost += order.count * price
+                self.bill_info.append({
+                    "name":order.order_content,
+                    "count":str(order.count),
+                    "price":str(price),
+                    "total_price":"%.2f" % (order.count * price) #转为str，保留两位小数
+                })
+            #手动调整金额 加入bill
+            if float(float(self.adjust_money)) != 0:
+                self.bill_info.append({
+                    "name":"手动调差",
+                    "count":"1",
+                    "price":str(self.adjust_money),
+                    "total_price":"%.2f" % float(self.adjust_money) #转为str，保留两位小数
+                })
             #转为str，保留两位小数
             self.cost = "%.2f" % cost
         self.add_time_cost = "%.2f" % add_time_cost
@@ -391,7 +428,7 @@ class HistoryOrders:
         order.order_id = self.id + str(self.max_id).zfill(3)
         self.orders.append(order)
         self.subtotal += float(order.cost)
-        return True
+        return order.order_id
     #json转对象
     @classmethod
     def from_json(cls,json_data):
@@ -434,12 +471,12 @@ def write_history_order_info(room_order:RoomInfo):
         today_history_order.date = datetime.datetime.now().strftime("%Y-%m-%d")
         HistoryOrderList.append(today_history_order)
     new_history_order = HistoryOrderInfo.room_order_to_history_order(room_order)
-    today_history_order.add_order(new_history_order)
+    order_id = today_history_order.add_order(new_history_order)
     #写入文件
     print("debug history_orders:",[history_orders.to_json() for history_orders in HistoryOrderList])
     with open(os.path.join(Data_path,'history_order_info.json'),'w') as f:
         f.write(json.dumps([history_orders.to_json() for history_orders in HistoryOrderList],ensure_ascii=False,indent=4))
-
+    return order_id
 def delete_history_order_info(request_data):
     order_id = request_data['id']
     id_lenth = len(order_id)
@@ -514,13 +551,18 @@ def open_end_order(request_data):
 
             elif request_data['action'] == "end":
                 room.end_time = datetime.datetime.now().strftime('%H:%M:%S')
-                write_history_order_info(room)
+                bill_id = write_history_order_info(room)
                 room.order_status = OrderStatus.ENDING
                 room.start_time = None
                 room.pause_total_seconds = 0
                 room.pause_status = OrderStatus.RUNNING
                 room.pause_start_time = None
                 print("room {} end order".format(room.id))
+                try:
+                    print_bill(order_id=bill_id, time_str= datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                               order_infos= room.bill_info, total_price = room.cost)
+                except Exception as e:
+                    print("print_bill error:{}".format(e))
             else:
                 print("open_end_order:action error.{}".format(request_data['action']))
                 return False
@@ -563,9 +605,22 @@ def set_order_info(request_data):
 
 
 def init_data():
+    init_file()
     load_room_info()
     load_goods_info()
     load_history_order_info()
+    webbrowser.open("http://127.0.0.1:8888")
+
+#初始化文件结构
+def init_file():
+    #判断Judian文件是否存在
+    judian_path = os.path.join(PRROJET_DIR,'Judian')
+    if not os.path.exists(judian_path):
+        os.mkdir(judian_path)
+    #判断Data文件是否存在
+    data_path = os.path.join(judian_path,'Data')
+    if not os.path.exists(data_path):
+        os.mkdir(data_path)
 
 #加载房间信息
 def load_room_info():
@@ -644,3 +699,5 @@ def change_room_order(request_data):
     return True
 
 
+if __name__ == '__main__':
+    print(PRROJET_DIR)
