@@ -264,6 +264,18 @@ def get_room_info():
 def set_room_info(request_data):
     request_room_id = []
     for room in request_data:
+        if not room['name']:
+            print("房间名为空:",room['id'],room['name'])
+            continue
+        if not room ['price']:
+            print("房间价格为空:",room['id'],room['name'])
+            continue
+        if room['base_price'] == None:
+            print("房间基础价格为空:",room['id'],room['name'])
+            continue
+        if room['base_hours'] == None:
+            print("房间基础时间为空:",room['id'],room['name'])
+            continue
         if room['id'] != "":
             request_room_id.append(room['id'])
             #更新房间信息
@@ -611,9 +623,13 @@ def load_history_order_info():
 def change_room_order(request_data):
     room_id = request_data['id']
     start_time = request_data['start_time']
+    if not start_time:
+        return False
     start_time = datetime.datetime.strptime(start_time,'%Y-%m-%d %H:%M:%S')
     print('DEBUG start_time:',start_time,type(start_time))
     adjust_money = request_data['adjust_money']
+    if not adjust_money:
+        adjust_money = 0
     for room in RoomInfoList:
         if room.id == room_id:
             room.start_time = start_time
