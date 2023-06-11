@@ -25,9 +25,7 @@ class OrderInfo:
     def add_order(cls,room_id,order_content,count):
         for room in RoomInfoList:
             if room.id == room_id:
-                date = datetime.datetime.now().strftime('%Y%m%d')
-                room.max_order_id += 1
-                order_id = date + room_id + str(room.max_order_id).zfill(3)
+                order_id = room.generate_order_id()
                 order_info = OrderInfo()
                 order_info.order_id = order_id
                 order_info.order_content = order_content
@@ -246,6 +244,19 @@ class RoomInfo:
         room_info.order_info = [OrderInfo.from_json(order) for order in json_data['order_info']]
         return room_info
 
+    #生成商品订单id
+    def generate_order_id(self):
+        date = datetime.datetime.now().strftime("%Y%m%d")
+        order_id = date + self.id + str(self.max_order_id).zfill(3)
+        for order in self.order_info:
+            if order_id == order.order_id:
+                self.max_order_id += 1
+                order_id = date + self.id + str(self.max_order_id).zfill(3)
+        else:
+            self.max_order_id += 1
+        return order_id
+
+
 class CommodityInfo:
     def __init__(self):
         self.id = None #商品id
@@ -293,9 +304,9 @@ CommodityList:List[CommodityInfo] = []
 CommodityIdList:List[str] = []
 
 def get_room_info():
-    print("get 房间列表：{},len:{}".format(RoomIdList, len(RoomInfoList)))
-    for room in RoomInfoList:
-        print("DEBUG get room:{}".format(room.to_dict()))
+    # print("get 房间列表：{},len:{}".format(RoomIdList, len(RoomInfoList)))
+    # for room in RoomInfoList:
+    #     print("DEBUG get room:{}".format(room.to_dict()))
     return [room.to_dict() for room in RoomInfoList]
 
 def set_room_info(request_data):
@@ -425,7 +436,12 @@ class HistoryOrders:
     #新增订单
     def add_order(self,order:HistoryOrderInfo):
         self.max_id += 1
-        order.order_id = self.id + str(self.max_id).zfill(3)
+        order_id = self.id + str(self.max_id).zfill(3)
+        for order_info in self.orders:
+            if order_info.order_id == order_id:
+                self.max_id += 1
+                order_id = self.id + str(self.max_id).zfill(3)
+        order.order_id = order_id
         self.orders.append(order)
         self.subtotal += float(order.cost)
         return order.order_id
